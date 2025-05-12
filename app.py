@@ -4,8 +4,11 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# ✅ Use FreeWebAPI instead of AniAPI
-FREEWEBAPI_ANIME_URL = "https://freewebapi.com/api/anime/search"
+# ✅ API URLs
+JIKAN_API = "https://api.jikan.moe/v4/anime?q="
+KITSU_API = "https://kitsu.io/api/edge/anime?filter[text]="
+ANILIST_API = "https://graphql.anilist.co"
+SHIKIMORI_API = "https://shikimori.one/api/animes?search="
 NYAA_SEARCH_URL = "https://nyaa.si/?f=0&c=1_2&q="  # ✅ Nyaa Torrent Search
 
 @app.route("/search", methods=["GET"])
@@ -14,18 +17,31 @@ def search_anime():
     if not query:
         return jsonify({"error": "Provide an anime name!"}), 400
 
+    results = {}
+
     try:
-        params = {"query": query}
-        response = requests.get(FREEWEBAPI_ANIME_URL, params=params)
-
-        print("API Response Status Code:", response.status_code)  # ✅ Debugging
-        print("API Response Body:", response.text)  # ✅ Debugging
-
+        # ✅ Jikan API (MyAnimeList)
+        response = requests.get(JIKAN_API + query)
         if response.status_code == 200:
-            data = response.json()
-            return jsonify(data)
+            results["Jikan"] = response.json()
 
-        return jsonify({"error": f"Anime not found! API returned {response.status_code}"})
+        # ✅ Kitsu API
+        response = requests.get(KITSU_API + query)
+        if response.status_code == 200:
+            results["Kitsu"] = response.json()
+
+        # ✅ AniList API (GraphQL Request)
+        graphql_query = {"query": f"query {{ Media (search: \"{query}\") {{ title status episodes }} }}"}
+        response = requests.post(ANILIST_API, json=graphql_query)
+        if response.status_code == 200:
+            results["AniList"] = response.json()
+
+        # ✅ Shikimori API
+        response = requests.get(SHIKIMORI_API + query)
+        if response.status_code == 200:
+            results["Shikimori"] = response.json()
+
+        return jsonify(results)
 
     except Exception as e:
         print("Error:", str(e))  # ✅ Debugging
