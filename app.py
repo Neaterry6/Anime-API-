@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-ANIAPI_URL = "https://api.aniapi.com/v1/anime"
+# ✅ Use FreeWebAPI instead of AniAPI
+FREEWEBAPI_ANIME_URL = "https://freewebapi.com/api/anime/search"
 NYAA_SEARCH_URL = "https://nyaa.si/?f=0&c=1_2&q="  # ✅ Nyaa Torrent Search
 
 @app.route("/search", methods=["GET"])
@@ -14,8 +15,8 @@ def search_anime():
         return jsonify({"error": "Provide an anime name!"}), 400
 
     try:
-        params = {"title": query}
-        response = requests.get(ANIAPI_URL, params=params)
+        params = {"query": query}
+        response = requests.get(FREEWEBAPI_ANIME_URL, params=params)
 
         print("API Response Status Code:", response.status_code)  # ✅ Debugging
         print("API Response Body:", response.text)  # ✅ Debugging
